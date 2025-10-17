@@ -339,7 +339,7 @@ Bu proje **MIT Lisansı** altında lisanslanmıştır. Detaylar için [LICENSE](
 
 ## 👨‍💻 Geliştirici
 
-**Proje Sahibi:** [Your Name]
+**Proje Sahibi:** Khalid & İrem Altunay
 
 ### 📧 İletişim
 
