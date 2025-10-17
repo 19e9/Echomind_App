@@ -343,9 +343,9 @@ Bu proje **MIT Lisansı** altında lisanslanmıştır. Detaylar için [LICENSE](
 
 ### 📧 İletişim
 
-- GitHub: [@yourusername](https://github.com/yourusername)
-- Email: your.email@example.com
-- LinkedIn: [Your LinkedIn](https://linkedin.com/in/yourprofile)
+- GitHub: Khalid (https://github.com/19e9)
+- Email: Khaledtg17@gmail.com
+- LinkedIn: (https://linkedin.com/in/khalid-tariq)
 
 ---
 
