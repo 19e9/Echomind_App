@@ -345,7 +345,7 @@ Bu proje **MIT Lisansı** altında lisanslanmıştır. Detaylar için [LICENSE](
 
 - GitHub: Khalid (https://github.com/19e9)
 - Email: Khaledtg17@gmail.com
-- LinkedIn: (https://linkedin.com/in/khalid-tariq)
+- LinkedIn: (https://linkedin.com/in/khalid-tariq) irem altunay (https://www.linkedin.com/in/irem-altunay-a88893251/)
 
 ---
 
