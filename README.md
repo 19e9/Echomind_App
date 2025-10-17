@@ -57,7 +57,7 @@
 ### 1️⃣ Projeyi Klonlayın
 
 ```bash
-git clone https://github.com/KULLANICI_ADINIZ/echomindapp.git
+git clone https://github.com/19e9/Echomind_App.git
 cd echomindapp
 ```
 
