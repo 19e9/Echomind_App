@@ -4,11 +4,15 @@ import { Audio } from 'expo-av';
 import { MicButton } from '../components/MicButton';
 import { PlayButton } from '../components/PlayButton';
 import { TextDisplay } from '../components/TextDisplay';
+import { AvatarDisplay } from '../components/AvatarDisplay';
+import { AvatarSelector } from '../components/AvatarSelector';
 import { transcribeAudio } from '../services/deepgramService';
 import { speakText } from '../services/ttsService';
 import { getLiveTranscriber } from '../services/deepgramLiveService';
+import { textToAvatar, speechToAvatar } from '../services/avatarTTSService';
+import { AVATAR_CONFIG } from '../config/avatarConfig';
 
-export default function HomeScreen() {
+export default function HomeScreen({ navigation }) {
   const [transcribedText, setTranscribedText] = useState(''); // Transkripsiyon sonucu
   const [customText, setCustomText] = useState(''); // Kullanıcının yazdığı metin
   const [isRecording, setIsRecording] = useState(false);
@@ -20,6 +24,17 @@ export default function HomeScreen() {
   const [isLiveConnected, setIsLiveConnected] = useState(false);
   const liveTranscriber = useRef(null);
   const recordingInterval = useRef(null);
+
+  // Avatar states
+  const [avatarMode, setAvatarMode] = useState(false); // Avatar modu aktif mi?
+  const [selectedAvatar, setSelectedAvatar] = useState(
+    AVATAR_CONFIG.mode === 'online' 
+      ? AVATAR_CONFIG.avatars.defaultAvatar // HeyGen online avatar
+      : AVATAR_CONFIG.avatars.offlineAvatars[0] // Offline avatar (İrem)
+  );
+  const [avatarVideoUrl, setAvatarVideoUrl] = useState(null);
+  const [isAvatarLoading, setIsAvatarLoading] = useState(false);
+  const [showAvatarSelector, setShowAvatarSelector] = useState(false);
 
   // Ses kayıt izinlerini ayarla
   useEffect(() => {
@@ -224,7 +239,38 @@ export default function HomeScreen() {
       const textToSpeak = customText.trim() !== '' ? customText : transcribedText;
       
       if (textToSpeak && textToSpeak.trim() !== '' && !textToSpeak.includes('🔴') && textToSpeak !== 'Transkribe ediliyor...') {
-        await speakText(textToSpeak);
+        
+        // Avatar modu aktifse
+        if (avatarMode) {
+          setIsAvatarLoading(true);
+          setAvatarVideoUrl(null);
+          
+          try {
+            console.log('🎭 Creating avatar video with HeyGen...');
+            console.log('👤 Selected avatar:', selectedAvatar.name);
+            
+            // Online avatar (HeyGen) veya offline avatar kontrolü
+            if (selectedAvatar.online && selectedAvatar.avatarId) {
+              // HeyGen API kullan
+              const result = await textToAvatar(textToSpeak, selectedAvatar.avatarId);
+              setAvatarVideoUrl(result.videoUrl);
+              Alert.alert('✅ Başarılı', 'Avatar videonuz hazır!');
+            } else if (selectedAvatar.offline) {
+              // Offline avatar (şu an sadece static görüntü)
+              Alert.alert('ℹ️ Bilgi', 'Offline avatarlar için lip-sync henüz eklenmedi. Online avatar seçin.');
+            } else {
+              throw new Error('Geçersiz avatar seçimi');
+            }
+          } catch (error) {
+            console.error('Avatar creation error:', error);
+            Alert.alert('Hata', 'Avatar videosu oluşturulamadı: ' + error.message);
+          } finally {
+            setIsAvatarLoading(false);
+          }
+        } else {
+          // Normal TTS
+          await speakText(textToSpeak);
+        }
       } else {
         Alert.alert('Uyarı', 'Lütfen seslendirilecek metin yazın veya ses kaydı yapın');
       }
@@ -236,32 +282,89 @@ export default function HomeScreen() {
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
-      <Text style={styles.welcomeText}>Welcome to Echomind 👋</Text>
+      {/* Header with Settings Button */}
+      <View style={styles.headerContainer}>
+        <Text style={styles.welcomeText}>Welcome to Echomind 👋</Text>
+        <TouchableOpacity
+          style={styles.settingsButton}
+          onPress={() => navigation.navigate('Settings')}
+        >
+          <Text style={styles.settingsButtonText}>⚙️</Text>
+        </TouchableOpacity>
+      </View>
       
-      {/* Canlı Mod Toggle */}
+      {/* Avatar Modu Toggle */}
       <View style={styles.toggleContainer}>
         <Text style={styles.toggleLabel}>
-          {isLiveMode ? '🔴 Canlı Transkripsiyon' : '⏺️ Normal Kayıt'}
+          {avatarMode ? '🎭 Avatar Modu' : '🔊 Ses Modu'}
         </Text>
         <Switch
-          value={isLiveMode}
-          onValueChange={(value) => {
-            if (!isRecording) {
-              setIsLiveMode(value);
-            } else {
-              Alert.alert('Uyarı', 'Lütfen önce kaydı durdurun');
-            }
-          }}
-          trackColor={{ false: '#767577', true: '#4CAF50' }}
-          thumbColor={isLiveMode ? '#fff' : '#f4f3f4'}
+          value={avatarMode}
+          onValueChange={setAvatarMode}
+          trackColor={{ false: '#767577', true: '#9C27B0' }}
+          thumbColor={avatarMode ? '#fff' : '#f4f3f4'}
         />
       </View>
 
+      {/* Avatar Display (Avatar modunda göster) */}
+      {avatarMode && (
+        <View style={styles.avatarSection}>
+          <View style={styles.avatarHeader}>
+            <Text style={styles.sectionTitle}>Seçili Avatar</Text>
+            <TouchableOpacity
+              style={styles.changeAvatarButton}
+              onPress={() => setShowAvatarSelector(true)}
+            >
+              <Text style={styles.changeAvatarText}>🎨 Değiştir</Text>
+            </TouchableOpacity>
+          </View>
+          
+          <AvatarDisplay
+            videoUrl={avatarVideoUrl}
+            avatarImageUrl={
+              selectedAvatar.offline 
+                ? selectedAvatar.baseImage  // Offline: require()
+                : null  // Online (HeyGen): Video varsa görüntülenecek
+            }
+            isLoading={isAvatarLoading}
+            onPlaybackFinish={() => setAvatarVideoUrl(null)}
+            style={styles.avatarDisplay}
+          />
+          
+          <Text style={styles.avatarName}>
+            {selectedAvatar.name} {selectedAvatar.gender === 'male' ? '👨' : '👩'}
+          </Text>
+        </View>
+      )}
+      
+      {/* Canlı Mod Toggle (Ses modunda göster) */}
+      {!avatarMode && (
+        <View style={styles.toggleContainer}>
+          <Text style={styles.toggleLabel}>
+            {isLiveMode ? '🔴 Canlı Transkripsiyon' : '⏺️ Normal Kayıt'}
+          </Text>
+          <Switch
+            value={isLiveMode}
+            onValueChange={(value) => {
+              if (!isRecording) {
+                setIsLiveMode(value);
+              } else {
+                Alert.alert('Uyarı', 'Lütfen önce kaydı durdurun');
+              }
+            }}
+            trackColor={{ false: '#767577', true: '#4CAF50' }}
+            thumbColor={isLiveMode ? '#fff' : '#f4f3f4'}
+          />
+        </View>
+      )}
+
       {/* Açıklama */}
       <Text style={styles.description}>
-        {isLiveMode 
-          ? '💡 Konuşurken metinler üst kutuya yazılacak (her 2 saniyede)' 
-          : '💡 Kaydı bitirdiğinizde metin üst kutuda görünecek'}
+        {avatarMode 
+          ? '🎭 Avatar modu: Metniniz avatar tarafından görüntülü konuşulacak' 
+          : isLiveMode 
+            ? '💡 Konuşurken metinler üst kutuya yazılacak (her 2 saniyede)' 
+            : '💡 Kaydı bitirdiğinizde metin üst kutuda görünecek'}
       </Text>
 
       {/* Transkripsiyon Kutusu (Sadece transkripsiyon varsa görünür - Pasif) */}
@@ -319,11 +422,20 @@ export default function HomeScreen() {
           onPress={() => {
             setTranscribedText('');
             setCustomText('');
+            setAvatarVideoUrl(null);
           }}
         >
           <Text style={styles.clearButtonText}>🗑️ Hepsini Temizle</Text>
         </TouchableOpacity>
       )}
+
+      {/* Avatar Selector Modal */}
+      <AvatarSelector
+        visible={showAvatarSelector}
+        selectedAvatar={selectedAvatar}
+        onSelect={setSelectedAvatar}
+        onClose={() => setShowAvatarSelector(false)}
+      />
     </ScrollView>
   );
 }
@@ -336,11 +448,33 @@ const styles = StyleSheet.create({
     padding: 20,
     backgroundColor: '#f5f5f5',
   },
+  headerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+    marginBottom: 15,
+  },
   welcomeText: { 
     fontSize: 28, 
     fontWeight: 'bold', 
     color: '#333',
-    marginBottom: 15,
+  },
+  settingsButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#fff',
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
+  },
+  settingsButtonText: {
+    fontSize: 20,
   },
   toggleContainer: {
     flexDirection: 'row',
@@ -439,5 +573,49 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     fontWeight: '600',
+  },
+  // Avatar styles
+  avatarSection: {
+    width: '100%',
+    marginBottom: 20,
+    backgroundColor: '#fff',
+    padding: 15,
+    borderRadius: 15,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  avatarHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 15,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+  },
+  changeAvatarButton: {
+    backgroundColor: '#9C27B0',
+    paddingHorizontal: 15,
+    paddingVertical: 6,
+    borderRadius: 15,
+  },
+  changeAvatarText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  avatarDisplay: {
+    marginBottom: 10,
+  },
+  avatarName: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#666',
+    textAlign: 'center',
   },
 });

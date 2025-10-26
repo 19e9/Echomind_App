@@ -13,11 +13,20 @@ export default function App() {
         <Stack.Screen 
           name="Home" 
           component={HomeScreen} 
-          options={{ headerShown: false }} 
+          options={{ 
+            headerShown: false,
+          }} 
         />
         <Stack.Screen 
           name="Settings" 
-          component={SettingsScreen} 
+          component={SettingsScreen}
+          options={{
+            title: '⚙️ Ayarlar',
+            headerTitleStyle: {
+              fontSize: 18,
+              fontWeight: 'bold',
+            },
+          }}
         />
       </Stack.Navigator>
     </NavigationContainer>
