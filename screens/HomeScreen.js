@@ -6,6 +6,7 @@ import { PlayButton } from '../components/PlayButton';
 import { TextDisplay } from '../components/TextDisplay';
 import { AvatarDisplay } from '../components/AvatarDisplay';
 import { AvatarSelector } from '../components/AvatarSelector';
+import { VoiceDock } from '../components/VoiceDock'; // ⭐ NEW: Quick voice dictation panel
 import { transcribeAudio } from '../services/deepgramService';
 import { speakText } from '../services/ttsService';
 import { getLiveTranscriber } from '../services/deepgramLiveService';
@@ -35,6 +36,9 @@ export default function HomeScreen({ navigation }) {
   const [avatarVideoUrl, setAvatarVideoUrl] = useState(null);
   const [isAvatarLoading, setIsAvatarLoading] = useState(false);
   const [showAvatarSelector, setShowAvatarSelector] = useState(false);
+  
+  // ⭐ NEW: VoiceDock state (NON-DESTRUCTIVE addition)
+  const [showVoiceDock, setShowVoiceDock] = useState(false);
 
   // Ses kayıt izinlerini ayarla
   useEffect(() => {
@@ -429,12 +433,31 @@ export default function HomeScreen({ navigation }) {
         </TouchableOpacity>
       )}
 
+      {/* ⭐ NEW: Quick Voice Dock Button (NON-DESTRUCTIVE addition) */}
+      <TouchableOpacity 
+        style={styles.voiceDockButton} 
+        onPress={() => setShowVoiceDock(true)}
+      >
+        <Text style={styles.voiceDockButtonIcon}>🎤</Text>
+        <Text style={styles.voiceDockButtonText}>Hızlı Sesli Dikte</Text>
+        <Text style={styles.voiceDockButtonSubtext}>
+          Gerçek zamanlı · Avatar ile konuş
+        </Text>
+      </TouchableOpacity>
+
       {/* Avatar Selector Modal */}
       <AvatarSelector
         visible={showAvatarSelector}
         selectedAvatar={selectedAvatar}
         onSelect={setSelectedAvatar}
         onClose={() => setShowAvatarSelector(false)}
+      />
+
+      {/* ⭐ NEW: Voice Dock Modal (NON-DESTRUCTIVE addition) */}
+      <VoiceDock
+        visible={showVoiceDock}
+        onClose={() => setShowVoiceDock(false)}
+        selectedAvatar={selectedAvatar}
       />
     </ScrollView>
   );
@@ -617,5 +640,34 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     color: '#666',
     textAlign: 'center',
+  },
+  // ⭐ NEW: Voice Dock Button Styles (NON-DESTRUCTIVE addition)
+  voiceDockButton: {
+    backgroundColor: '#7C4DFF',
+    padding: 20,
+    borderRadius: 16,
+    marginTop: 20,
+    marginBottom: 20,
+    alignItems: 'center',
+    shadowColor: '#7C4DFF',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 6,
+  },
+  voiceDockButtonIcon: {
+    fontSize: 32,
+    marginBottom: 8,
+  },
+  voiceDockButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  voiceDockButtonSubtext: {
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 12,
+    fontWeight: '500',
   },
 });
