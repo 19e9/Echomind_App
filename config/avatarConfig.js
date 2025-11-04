@@ -8,7 +8,7 @@
 
 export const AVATAR_CONFIG = {
   // HeyGen API Key (⚠️ Production'da environment variable kullanın)
-  heygenApiKey: "sk_V2_hgu_ktMj8J6thff_8ijTaBIMdsArKLExIljL4bFBCmsSlhXM",
+  heygenApiKey: "sk_V2_hgu_kiyuYUFolFH_6qcVMNEkMJ41qXzWJfcp2ffql4YFtzTK",
 
   // D-ID API Key (DEPRECATED - Artık HeyGen kullanılıyor)
   didApiKey: null,

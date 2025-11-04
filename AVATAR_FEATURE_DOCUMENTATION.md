@@ -77,7 +77,7 @@ Metin Girişi → Deepgram TTS → Ses Dosyası → D-ID API → Avatar Videosu
 
 **Özellikler:**
 - Kullanıcının yazdığı metin avatar tarafından konuşulur
-- 10-30 saniye video hazırlama süresi
+- 30-60 saniye video hazırlama süresi
 - Loading indicator ile feedback
 - Video cache desteği
 

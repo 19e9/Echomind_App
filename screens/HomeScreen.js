@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, ScrollView, Alert, TextInput, TouchableOpacity, Switch } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Alert, TextInput, TouchableOpacity, Switch, Dimensions } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Audio } from 'expo-av';
 import { MicButton } from '../components/MicButton';
 import { PlayButton } from '../components/PlayButton';
@@ -14,6 +15,7 @@ import { textToAvatar, speechToAvatar } from '../services/avatarTTSService';
 import { AVATAR_CONFIG } from '../config/avatarConfig';
 
 export default function HomeScreen({ navigation }) {
+  const insets = useSafeAreaInsets();
   const [transcribedText, setTranscribedText] = useState(''); // Transkripsiyon sonucu
   const [customText, setCustomText] = useState(''); // Kullanıcının yazdığı metin
   const [isRecording, setIsRecording] = useState(false);
@@ -39,6 +41,7 @@ export default function HomeScreen({ navigation }) {
   
   // ⭐ NEW: VoiceDock state (NON-DESTRUCTIVE addition)
   const [showVoiceDock, setShowVoiceDock] = useState(false);
+  const avatarDisplayRef = useRef(null);
 
   // Ses kayıt izinlerini ayarla
   useEffect(() => {
@@ -69,6 +72,10 @@ export default function HomeScreen({ navigation }) {
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: true,
         playsInSilentModeIOS: true,
+        interruptionModeIOS: Audio.INTERRUPTION_MODE_IOS_MIX_WITH_OTHERS,
+        interruptionModeAndroid: Audio.INTERRUPTION_MODE_ANDROID_DUCK_OTHERS,
+        shouldDuckAndroid: true,
+        staysActiveInBackground: false,
       });
 
       // İlk kayıt başlat
@@ -100,7 +107,7 @@ export default function HomeScreen({ navigation }) {
             await newRecording.stopAndUnloadAsync();
             const uri = newRecording.getURI();
             
-            // Transkribe et
+            // Transkribe et (otomatik dil algılama)
             const text = await transcribeAudio(uri);
             
             if (text && text !== 'Ses algılanamadı veya transkribe edilemedi') {
@@ -176,6 +183,10 @@ export default function HomeScreen({ navigation }) {
       await Audio.setAudioModeAsync({
         allowsRecordingIOS: true,
         playsInSilentModeIOS: true,
+        interruptionModeIOS: Audio.INTERRUPTION_MODE_IOS_MIX_WITH_OTHERS,
+        interruptionModeAndroid: Audio.INTERRUPTION_MODE_ANDROID_DUCK_OTHERS,
+        shouldDuckAndroid: true,
+        staysActiveInBackground: false,
       });
 
       const { recording: newRecording } = await Audio.Recording.createAsync(
@@ -204,7 +215,7 @@ export default function HomeScreen({ navigation }) {
       const uri = recording.getURI();
       console.log('Ses kaydedildi:', uri);
       
-      // Deepgram ile transkribe et
+      // Deepgram ile transkribe et (otomatik dil algılama)
       setTranscribedText('Transkribe ediliyor...');
       const text = await transcribeAudio(uri);
       setTranscribedText(text);
@@ -221,6 +232,14 @@ export default function HomeScreen({ navigation }) {
 
   const handleMicPress = async () => {
     if (!isRecording) {
+      // 🎥 Halihazırda bir avatar videosu varsa anında baştan oynat (cache'ten tekrar yükleme yok)
+      if (avatarMode && avatarVideoUrl && avatarDisplayRef.current) {
+        try {
+          await avatarDisplayRef.current.replayFromStart();
+        } catch (e) {
+          console.warn('Avatar replay sırasında hata:', e?.message || e);
+        }
+      }
       // Kayıt başlat
       if (isLiveMode) {
         await startLiveTranscription();
@@ -284,18 +303,32 @@ export default function HomeScreen({ navigation }) {
     }
   };
 
+  const { width: SCREEN_WIDTH } = Dimensions.get('window');
+  const IS_SMALL_SCREEN = SCREEN_WIDTH < 375;
+  const IS_TABLET = SCREEN_WIDTH >= 768;
+
   return (
-    <ScrollView contentContainerStyle={styles.container}>
-      {/* Header with Settings Button */}
+    <ScrollView 
+      contentContainerStyle={[
+        styles.container,
+        { paddingTop: Math.max(insets.top, IS_SMALL_SCREEN ? 12 : IS_TABLET ? 30 : 20) }
+      ]}
+    >
+      {/* Header */}
       <View style={styles.headerContainer}>
         <Text style={styles.welcomeText}>Welcome to Echomind 👋</Text>
-        <TouchableOpacity
-          style={styles.settingsButton}
-          onPress={() => navigation.navigate('Settings')}
-        >
-          <Text style={styles.settingsButtonText}>⚙️</Text>
-        </TouchableOpacity>
       </View>
+
+      {/* İngilizce Öğren Butonu - Avatar modu aktifken gizlenir */}
+      {!avatarMode && (
+        <TouchableOpacity
+          style={styles.learningButton}
+          onPress={() => navigation.navigate('EnglishLearning')}
+        >
+          <Text style={styles.learningButtonText}>🇬🇧 İngilizce Öğren</Text>
+          <Text style={styles.learningButtonSubtext}>Avatar ile İngilizce telaffuz öğrenin</Text>
+        </TouchableOpacity>
+      )}
       
       {/* Avatar Modu Toggle */}
       <View style={styles.toggleContainer}>
@@ -324,6 +357,7 @@ export default function HomeScreen({ navigation }) {
           </View>
           
           <AvatarDisplay
+            ref={avatarDisplayRef}
             videoUrl={avatarVideoUrl}
             avatarImageUrl={
               selectedAvatar.offline 
@@ -331,7 +365,7 @@ export default function HomeScreen({ navigation }) {
                 : null  // Online (HeyGen): Video varsa görüntülenecek
             }
             isLoading={isAvatarLoading}
-            onPlaybackFinish={() => setAvatarVideoUrl(null)}
+            muteDuringRecording={isRecording}
             style={styles.avatarDisplay}
           />
           
@@ -433,17 +467,7 @@ export default function HomeScreen({ navigation }) {
         </TouchableOpacity>
       )}
 
-      {/* ⭐ NEW: Quick Voice Dock Button (NON-DESTRUCTIVE addition) */}
-      <TouchableOpacity 
-        style={styles.voiceDockButton} 
-        onPress={() => setShowVoiceDock(true)}
-      >
-        <Text style={styles.voiceDockButtonIcon}>🎤</Text>
-        <Text style={styles.voiceDockButtonText}>Hızlı Sesli Dikte</Text>
-        <Text style={styles.voiceDockButtonSubtext}>
-          Gerçek zamanlı · Avatar ile konuş
-        </Text>
-      </TouchableOpacity>
+      {/* Quick Voice Dock button removed as requested */}
 
       {/* Avatar Selector Modal */}
       <AvatarSelector
@@ -463,49 +487,65 @@ export default function HomeScreen({ navigation }) {
   );
 }
 
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
+const IS_SMALL_SCREEN = SCREEN_WIDTH < 375;
+const IS_TABLET = SCREEN_WIDTH >= 768;
+const IS_LARGE_SCREEN = SCREEN_WIDTH >= 414;
+
 const styles = StyleSheet.create({
   container: { 
     flexGrow: 1, 
     justifyContent: 'center', 
     alignItems: 'center',
-    padding: 20,
+    // paddingTop will be set dynamically based on safe area insets
+    paddingBottom: IS_SMALL_SCREEN ? 12 : IS_TABLET ? 30 : 20,
+    paddingHorizontal: IS_SMALL_SCREEN ? 15 : IS_TABLET ? 40 : 20,
     backgroundColor: '#f5f5f5',
   },
   headerContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
     width: '100%',
-    marginBottom: 15,
+    marginBottom: IS_SMALL_SCREEN ? 10 : 15,
+    alignItems: 'center',
   },
   welcomeText: { 
-    fontSize: 28, 
+    fontSize: IS_SMALL_SCREEN ? 22 : IS_TABLET ? 32 : 28, 
     fontWeight: 'bold', 
     color: '#333',
   },
-  settingsButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: '#fff',
-    justifyContent: 'center',
+  learningButton: {
+    width: '100%',
+    maxWidth: IS_TABLET ? 600 : '100%',
+    alignSelf: 'center',
+    backgroundColor: '#4A90E2',
+    padding: IS_SMALL_SCREEN ? 15 : IS_TABLET ? 25 : 20,
+    borderRadius: 15,
+    marginBottom: IS_SMALL_SCREEN ? 12 : 15,
     alignItems: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 3,
-    elevation: 3,
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 5,
   },
-  settingsButtonText: {
-    fontSize: 20,
+  learningButtonText: {
+    fontSize: IS_SMALL_SCREEN ? 18 : IS_TABLET ? 24 : 20,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 5,
+  },
+  learningButtonSubtext: {
+    fontSize: IS_SMALL_SCREEN ? 12 : IS_TABLET ? 16 : 14,
+    color: '#e3f2fd',
   },
   toggleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     width: '100%',
+    maxWidth: IS_TABLET ? 600 : '100%',
+    alignSelf: 'center',
     backgroundColor: '#fff',
-    padding: 15,
+    padding: IS_SMALL_SCREEN ? 12 : 15,
     borderRadius: 10,
     marginBottom: 10,
     shadowColor: '#000',
@@ -515,20 +555,20 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   toggleLabel: {
-    fontSize: 16,
+    fontSize: IS_SMALL_SCREEN ? 14 : IS_TABLET ? 18 : 16,
     fontWeight: '600',
     color: '#333',
   },
   description: {
-    fontSize: 12,
+    fontSize: IS_SMALL_SCREEN ? 11 : IS_TABLET ? 14 : 12,
     color: '#666',
     textAlign: 'center',
-    marginBottom: 15,
+    marginBottom: IS_SMALL_SCREEN ? 12 : 15,
     fontStyle: 'italic',
-    paddingHorizontal: 10,
+    paddingHorizontal: IS_SMALL_SCREEN ? 8 : 10,
   },
   label: {
-    fontSize: 14,
+    fontSize: IS_SMALL_SCREEN ? 13 : IS_TABLET ? 16 : 14,
     fontWeight: '600',
     color: '#555',
     marginBottom: 8,
@@ -536,18 +576,22 @@ const styles = StyleSheet.create({
   },
   displayContainer: {
     width: '100%',
-    marginBottom: 15,
+    maxWidth: IS_TABLET ? 600 : '100%',
+    alignSelf: 'center',
+    marginBottom: IS_SMALL_SCREEN ? 12 : 15,
   },
   inputContainer: {
     width: '100%',
-    marginBottom: 20,
+    maxWidth: IS_TABLET ? 600 : '100%',
+    alignSelf: 'center',
+    marginBottom: IS_SMALL_SCREEN ? 15 : 20,
   },
   textInput: {
     backgroundColor: '#fff',
     borderRadius: 12,
-    padding: 15,
-    minHeight: 120,
-    fontSize: 16,
+    padding: IS_SMALL_SCREEN ? 12 : 15,
+    minHeight: IS_SMALL_SCREEN ? 100 : IS_TABLET ? 150 : 120,
+    fontSize: IS_SMALL_SCREEN ? 15 : IS_TABLET ? 18 : 16,
     color: '#333',
     borderWidth: 1,
     borderColor: '#ddd',
@@ -568,13 +612,18 @@ const styles = StyleSheet.create({
     justifyContent: 'space-around',
     alignItems: 'center',
     width: '100%',
+    maxWidth: IS_TABLET ? 500 : '100%',
+    alignSelf: 'center',
     marginTop: 10,
+    paddingHorizontal: IS_SMALL_SCREEN ? 10 : 0,
   },
   buttonWrapper: {
     alignItems: 'center',
+    flex: 1,
+    maxWidth: IS_TABLET ? 200 : 'none',
   },
   buttonLabel: {
-    fontSize: 12,
+    fontSize: IS_SMALL_SCREEN ? 11 : IS_TABLET ? 14 : 12,
     color: '#666',
     marginTop: 5,
     fontWeight: '500',
@@ -600,9 +649,11 @@ const styles = StyleSheet.create({
   // Avatar styles
   avatarSection: {
     width: '100%',
-    marginBottom: 20,
+    maxWidth: IS_TABLET ? 600 : '100%',
+    alignSelf: 'center',
+    marginBottom: IS_SMALL_SCREEN ? 15 : 20,
     backgroundColor: '#fff',
-    padding: 15,
+    padding: IS_SMALL_SCREEN ? 12 : IS_TABLET ? 20 : 15,
     borderRadius: 15,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
@@ -614,29 +665,35 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: IS_SMALL_SCREEN ? 12 : 15,
+    flexWrap: IS_SMALL_SCREEN ? 'wrap' : 'nowrap',
+    gap: IS_SMALL_SCREEN ? 8 : 0,
   },
   sectionTitle: {
-    fontSize: 16,
+    fontSize: IS_SMALL_SCREEN ? 14 : IS_TABLET ? 18 : 16,
     fontWeight: '600',
     color: '#333',
+    flex: IS_SMALL_SCREEN ? 1 : 0,
   },
   changeAvatarButton: {
     backgroundColor: '#9C27B0',
-    paddingHorizontal: 15,
-    paddingVertical: 6,
+    paddingHorizontal: IS_SMALL_SCREEN ? 12 : 15,
+    paddingVertical: IS_SMALL_SCREEN ? 5 : 6,
     borderRadius: 15,
   },
   changeAvatarText: {
     color: '#fff',
-    fontSize: 12,
+    fontSize: IS_SMALL_SCREEN ? 11 : IS_TABLET ? 14 : 12,
     fontWeight: '600',
   },
   avatarDisplay: {
-    marginBottom: 10,
+    marginBottom: IS_SMALL_SCREEN ? 8 : 10,
+    width: '100%',
+    maxWidth: IS_TABLET ? 500 : '100%',
+    alignSelf: 'center',
   },
   avatarName: {
-    fontSize: 14,
+    fontSize: IS_SMALL_SCREEN ? 13 : IS_TABLET ? 16 : 14,
     fontWeight: '500',
     color: '#666',
     textAlign: 'center',

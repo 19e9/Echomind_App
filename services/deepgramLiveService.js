@@ -15,6 +15,7 @@ export class DeepgramLiveTranscriber {
 
   /**
    * WebSocket bağlantısını başlatır
+   * Otomatik dil algılama ile çalışır (Türkçe ve İngilizce desteklenir)
    * @param {function} onTranscript - Her transkript geldiğinde çağrılacak callback
    * @param {function} onError - Hata olduğunda çağrılacak callback
    */
@@ -24,10 +25,10 @@ export class DeepgramLiveTranscriber {
         this.onTranscriptCallback = onTranscript;
         this.onErrorCallback = onError;
 
-        // WebSocket URL oluştur
+        // WebSocket URL oluştur - Otomatik dil algılama aktif (Türkçe ve İngilizce desteklenir)
         const wsUrl = `wss://api.deepgram.com/v1/listen?` + new URLSearchParams({
           model: DEEPGRAM_CONFIG.stt.model,
-          language: DEEPGRAM_CONFIG.stt.language,
+          detect_language: 'true', // Otomatik dil algılama aktif
           smart_format: DEEPGRAM_CONFIG.stt.smartFormat.toString(),
           punctuate: DEEPGRAM_CONFIG.stt.punctuate.toString(),
           interim_results: 'true',

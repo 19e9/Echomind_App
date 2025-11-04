@@ -5,6 +5,7 @@ import {
   waitForVideoCompletion 
 } from './heygenApiService';
 import * as FileSystem from 'expo-file-system/legacy';
+import { getVideoFromCache, saveVideoToCache } from './videoCacheService';
 
 /**
  * Avatar TTS Service
@@ -33,17 +34,45 @@ export const textToAvatar = async (text, avatarId, voiceId = null) => {
     console.log('📝 Text length:', text.length, 'chars');
     console.log('👤 Avatar ID:', avatarId);
 
+    // Cache kontrolü - Önce cache'den kontrol et
+    const cachedVideo = await getVideoFromCache(text, avatarId);
+    if (cachedVideo && cachedVideo.videoUrl) {
+      console.log('✨ Video cache\'den alındı (hızlı yükleme!)');
+      console.log('📹 Cached video URL:', cachedVideo.videoUrl);
+      console.log('⏱️ Cache yaşı: ~' + cachedVideo.cacheAge + ' dakika');
+      
+      return {
+        success: true,
+        videoUrl: cachedVideo.videoUrl,
+        videoId: cachedVideo.videoId,
+        text,
+        avatarId,
+        voiceId: voiceId || '2d5b0e6cf36f460aa7fc47e3eee4ba54',
+        cached: true,
+        timestamp: new Date().toISOString(),
+      };
+    }
+
+    console.log('🔄 Cache\'de video bulunamadı, yeni video oluşturuluyor...');
+
     // HeyGen TTS kullan (base64 sorunu yok!)
     const defaultVoiceId = voiceId || '2d5b0e6cf36f460aa7fc47e3eee4ba54';
     console.log('🔊 Using HeyGen TTS with voice:', defaultVoiceId);
     console.log('📚 HeyGen Docs: https://docs.heygen.com/docs/quick-start');
 
+    // Video ID'yi de almak için waitForVideoCompletion'dan önce videoId'yi sakla
+    // Not: textToAvatarWithHeyGen içinde videoId log'lanıyor ama dışarı dönmüyor
+    // Şimdilik sadece videoUrl ile cache yapıyoruz
     const videoUrl = await textToAvatarWithHeyGen(
       text,
       avatarId,
       null, // audioUrl = null (HeyGen TTS kullanacak)
       defaultVoiceId
     );
+
+    // Video başarıyla oluşturuldu, cache'e kaydet
+    console.log('💾 Video cache\'e kaydediliyor...');
+    await saveVideoToCache(text, avatarId, videoUrl);
 
     console.log('✅ Text-to-Avatar Pipeline Complete!');
     console.log('🎥 Video URL:', videoUrl);
@@ -54,10 +83,17 @@ export const textToAvatar = async (text, avatarId, voiceId = null) => {
       text,
       avatarId,
       voiceId: defaultVoiceId,
+      cached: false,
       timestamp: new Date().toISOString(),
     };
   } catch (error) {
     console.error('❌ Text-to-Avatar Pipeline Failed:', error);
+    
+    // HeyGen'den gelen özel hataları koru
+    if (error.code || error.message.includes('kredi') || error.message.includes('credit')) {
+      throw error; // Kullanıcı dostu mesaj zaten error.message'da
+    }
+    
     throw new Error('Avatar oluşturulamadı: ' + error.message);
   }
 };

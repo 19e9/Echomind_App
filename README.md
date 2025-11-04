@@ -9,7 +9,7 @@
 ![HeyGen](https://img.shields.io/badge/HeyGen-Video-9B59B6?style=for-the-badge)
 ![License](https://img.shields.io/badge/License-MIT-green?style=for-the-badge)
 
-**🤖 AI Destekli Gelişmiş Ses Tanıma ve 2D Konuşan Avatar Mobil Uygulaması**
+**Deepgram AI ve HeyGen Avatar destekli, profesyonel ses tanıma, metin okuma ve İngilizce öğrenme mobil uygulaması**
 
 *Speech-to-Text • Text-to-Speech • Konuşan Avatarlar • Gerçek Zamanlı İşlem*
 
@@ -18,6 +18,24 @@
 </div>
 
 ---
+
+## 🆕 Güncellemeler (v1.4.1)
+
+- 🧩 İngilizce Öğrenme ekranı iyileştirmeleri ve içerik güncellemeleri
+- 🎥 Video cache ve son-karede durdurma davranışında stabilite artışı
+- 🗣️ Telaffuz analizi doğruluk/presentasyon düzenlemeleri
+- 🤖 HeyGen entegrasyonunda hata dayanıklılığı ve bekleme/polling optimizasyonu
+- 🧹 Settings ekranı kaldırıldı; akışlar `Home` ve `EnglishLearning` içinde sadeleştirildi
+- 🌐 Yeni `translationService` eklendi; otomatik dil akışları sadeleştirildi
+- ⚙️ Konfig dosyaları güncellendi (`avatarConfig`, `englishLearningConfig`)
+
+Detaylı notlar için: `RELEASE_NOTES_1.4.1.md`
+
+- 🎤 Ana ekrandaki "Hızlı Sesli Dikte" butonu kaldırıldı.
+- 🎥 İngilizce Öğrenme ekranında kayıt sırasında arka plan avatar videosu sessiz ve loop olarak oynar; kayıt bitince video kaldırılmaz, son karede duraklatılır.
+- 🔄 "Tekrar İzle" butonu kaldırıldı; videolar bittiğinde son karede görünür kalır.
+- 📝 Telaffuz analizi: Deepgram STT ile transkript alınıp, kelime bazlı basit JS karşılaştırmasıyla (eşitlik/altküme) doğru-yanlış işaretlenir; ek kütüphane kullanılmaz.
+
 
 ## 🌟 Yenilikler (v1.3)
 
@@ -48,9 +66,11 @@
 
 - 🎤 **Speech-to-Text (STT)**: Deepgram Nova-2 modeli ile %95+ doğrulukta ses tanıma
 - 🔊 **Text-to-Speech (TTS)**: Deepgram Aura modeli ile doğal sesli metin okuma
-- 🎭 **2D Konuşan Avatarlar**: AI destekli gerçekçi avatar videoları
-- 🇹🇷 **Türkçe Dil Desteği**: Tam Türkçe transkripsiyon ve 30+ dil desteği
+- 🤖 **HeyGen Avatar**: AI destekli konuşan avatar ile interaktif deneyim
+- 🎓 **İngilizce Öğrenme**: 6 seviyeli (A1-C2) sistematik İngilizce öğrenme modülü
+- 🇹🇷 **Çoklu Dil Desteği**: Türkçe ve İngilizce için otomatik dil algılama
 - ⚡ **Gerçek Zamanlı İşlem**: Anlık ses kaydı ve hızlı transkripsiyon
+- 📹 **Video Cache Sistemi**: Oluşturulan avatar videoları cache'lenir, tekrar API çağrısı yapılmaz
 - 🎨 **Modern UI/UX**: Animasyonlu butonlar ve kullanıcı dostu arayüz
 - 📱 **Cross-Platform**: iOS, Android ve Web desteği
 
@@ -79,15 +99,17 @@
 
 ### 🔧 Teknik Özellikler
 
-- ✅ **Multi-API Desteği**: Deepgram + D-ID + HeyGen entegrasyonu
-- ✅ **REST API İletişimi**: SDK kullanmadan, native React Native uyumlu
-- ✅ **Otomatik Formatlama**: Akıllı noktalama ve büyük harf
-- ✅ **Yüksek Kaliteli Ses**: Expo AV ile profesyonel kayıt
-- ✅ **Video Oynatma**: Expo AV ile smooth video rendering
-- ✅ **Cache Sistemi**: Hızlı erişim ve maliyet optimizasyonu
-- ✅ **Animasyonlu UI**: React Native Reanimated ile smooth geçişler
-- ✅ **Navigation**: React Navigation ile sayfa yönetimi
-- ✅ **Error Handling**: Kapsamlı hata yönetimi ve kullanıcı geri bildirimi
+- ✅ Deepgram REST API entegrasyonu (SDK kullanmadan)
+- ✅ HeyGen Avatar API entegrasyonu
+- ✅ Otomatik dil algılama (detect_language)
+- ✅ Video cache sistemi (kalıcı depolama)
+- ✅ Otomatik formatlama ve noktalama
+- ✅ Yüksek kaliteli ses kaydı (Expo AV)
+- ✅ Türkçe TTS desteği (Expo Speech)
+- ✅ URL'den ses dosyası transkripsiyon desteği
+- ✅ Animasyonlu UI bileşenleri (Reanimated)
+- ✅ React Navigation ile sayfa yönetimi
+- ✅ Safe Area desteği (notch uyumlu)
 
 ---
 
@@ -98,6 +120,7 @@
 - **npm** veya **yarn**
 - **Expo CLI** (otomatik yüklenecek)
 - **Deepgram API Key** ([ücretsiz alın](https://console.deepgram.com/) - $200 kredi)
+- **HeyGen API Key** ([ücretsiz alın](https://app.heygen.com/) - ücretsiz kredi)
 
 ### İsteğe Bağlı (Avatar Özellikleri İçin)
 - **D-ID API Key** ([ücretsiz deneyin](https://studio.d-id.com/) - 20 video/gün)
@@ -132,34 +155,16 @@ yarn install
 
 #### Deepgram (Zorunlu - STT/TTS)
 1. [Deepgram Console](https://console.deepgram.com/) adresine gidin
-2. Ücretsiz hesap oluşturun ($200 ücretsiz kredi)
-3. API Keys → Create New Key
-4. `config/deepgramConfig.js` dosyasını güncelleyin:
+2. Ücretsiz hesap oluşturun ($200 ücretsiz kredi dahil)
+3. API Keys bölümünden yeni bir key oluşturun
+4. `config/deepgramConfig.js` dosyasını açın ve API key'inizi ekleyin
 
-```javascript
-export const DEEPGRAM_CONFIG = {
-  apiKey: "YOUR_DEEPGRAM_API_KEY_HERE",
-  // ...
-};
-```
+#### HeyGen API Key
 
-#### D-ID (İsteğe Bağlı - Avatar Videoları)
-1. [D-ID Studio](https://studio.d-id.com/) adresine gidin
-2. Ücretsiz hesap oluşturun (20 video/gün)
-3. Settings → API Keys → Create New Key
-4. `config/avatarConfig.js` dosyasını güncelleyin:
-
-```javascript
-export const AVATAR_CONFIG = {
-  didApiKey: "YOUR_DID_API_KEY_HERE",
-  // ...
-};
-```
-
-#### HeyGen (İsteğe Bağlı - Premium Avatarlar)
-1. [HeyGen](https://www.heygen.com/) hesabı oluşturun
-2. API key alın
-3. `config/avatarConfig.js` dosyasını güncelleyin:
+1. [HeyGen Console](https://app.heygen.com/) adresine gidin
+2. Ücretsiz hesap oluşturun
+3. API Keys bölümünden yeni bir key oluşturun
+4. `config/avatarConfig.js` dosyasını açın ve API key'inizi ekleyin:
 
 ```javascript
 export const AVATAR_CONFIG = {
@@ -168,7 +173,7 @@ export const AVATAR_CONFIG = {
 };
 ```
 
-> ⚠️ **Güvenlik Notu**: API anahtarlarınızı asla GitHub'a yüklemeyin! `.gitignore` dosyası konfigürasyon dosyalarını içeriyor.
+⚠️ **Önemli Güvenlik Notu**: API anahtarlarınızı asla GitHub'a yüklemeyin!
 
 ### 4️⃣ Uygulamayı Başlatın
 
@@ -205,60 +210,19 @@ Expo DevTools açılacaktır:
 3. Konuşurken transkripsiyon **gerçek zamanlı** güncellenir
 4. Durdurmak için tekrar basın
 
-### 🔊 Metin Okuma (TTS)
+1. Önce bir ses kaydı yapın ve transkribe edin
+2. **▶️ Play** butonuna basın
+3. Metin sesli olarak okunacaktır (İngilizce için Deepgram, Türkçe için Expo Speech)
 
-1. Metin alanına içerik yazın veya ses kaydı yapın
-2. **▶️ Seslendir** butonuna basın
-3. Metin Deepgram Aura model ile seslendirilir
+### 🎓 İngilizce Öğrenme Modülü
 
-### 🎭 Avatar Modu (Text-to-Avatar)
-
-**Adım 1: Avatar Modunu Aktif Edin**
-```
-Ana Ekran → 🎭 Avatar Modu toggle → ON
-```
-
-**Adım 2: Avatar Seçin**
-```
-Avatar bölümü → 🎨 Değiştir → Avatar seçin → ✓
-```
-
-**Avatar Seçenekleri:**
-- **D-ID Avatarlar**: Amy, Josh, Anna, William (profesyonel)
-- **HeyGen Avatarlar**: 1200+ seçenek (Aditya, Adriana, Monica, vb.)
-- **Offline Avatarlar**: Halid, İrem, Aleyna (ücretsiz, lokal)
-
-**Adım 3: Metin Yazın ve Konuşturun**
-```
-✏️ Metin Yazın → "Merhaba, ben bir AI avatarım" → ▶️ Seslendir
-```
-
-**Bekleme Süreleri:**
-- D-ID: ~15-30 saniye
-- HeyGen: ~30-60 saniye
-- Offline: < 1 saniye ⚡
-
-**Adım 4: Videoyu İzleyin**
-```
-🎥 Video otomatik oynar
-🔊 "Konuşuyor..." göstergesi
-✅ Video bitince son frame'de kalır
-🔄 "Tekrar İzle" butonu ile tekrar oynatabilirsiniz
-```
-
-### 🎙️ Speech-to-Avatar
-
-**Tam Pipeline: Ses Kaydı → Transkripsiyon → Avatar Videosu**
-
-1. Avatar modunu aktif edin (🎭 ON)
-2. Avatar seçin
-3. 🎤 Mikrofon butonuna basın
-4. Konuşun (minimum 2-3 saniye)
-5. Kaydı durdurun
-6. ✅ Otomatik olarak:
-   - Ses transkribe edilir
-   - Metin avatar tarafından konuşulur
-   - Video oluşturulur ve oynatılır
+1. Ana ekranda **🇬🇧 İngilizce Öğren** butonuna basın
+2. 6 seviyeden birini seçin (A1, A2, B1, B2, C1, C2)
+3. Her seviyede 10 cümle ile ilerleyin
+4. **🔊 Avatar Telaffuzunu Dinle** butonu ile cümlenin doğru telaffuzunu dinleyin
+5. **🎤 Telaffuzunuzu Kaydedin** butonu ile kendi telaffuzunuzu kaydedin
+6. Otomatik kelime bazlı analiz (doğru kelimeler yeşil, yanlışlar kırmızı)
+7. Genel değerlendirme ve skor takibi
 
 ---
 
@@ -271,30 +235,32 @@ EchomindApp_v1.3/
 ├── 📋 app.json                        # Expo konfigürasyonu
 ├── 📦 package.json                    # Bağımlılıklar
 │
-├── 🧩 components/                     # UI bileşenleri
-│   ├── MicButton.js                  # Animasyonlu mikrofon butonu
-│   ├── PlayButton.js                 # Oynatma butonu
-│   ├── TextDisplay.js                # Metin gösterim alanı
-│   ├── AvatarDisplay.js              ⭐ Avatar video player + replay
-│   ├── AvatarSelector.js             ⭐ Avatar seçim modal'ı
-│   └── AnimatedAvatar.js             ⭐ Offline sprite animasyon
+├── 🧩 components/               # UI bileşenleri
+│   ├── MicButton.js            # Animasyonlu mikrofon butonu
+│   ├── PlayButton.js           # Oynatma butonu
+│   ├── TextDisplay.js          # Metin gösterim alanı
+│   ├── AvatarDisplay.js        # HeyGen avatar video gösterimi
+│   └── AvatarSelector.js       # Avatar seçici (opsiyonel)
 │
-├── 📱 screens/                        # Uygulama ekranları
-│   ├── HomeScreen.js                 # Ana ekran (STT/TTS/Avatar)
-│   └── SettingsScreen.js             # Kapsamlı ayarlar ekranı
+├── 📱 screens/                  # Uygulama ekranları
+│   ├── HomeScreen.js           # Ana ekran (Avatar Modu)
+│   └── EnglishLearningScreen.js # İngilizce öğrenme ekranı
 │
-├── ⚙️ config/                         # Konfigürasyon
-│   ├── deepgramConfig.js             # Deepgram API ayarları
-│   └── avatarConfig.js               ⭐ Avatar & D-ID & HeyGen ayarları
+├── ⚙️ config/                   # Konfigürasyon
+│   ├── deepgramConfig.js       # Deepgram API ayarları
+│   ├── avatarConfig.js         # HeyGen Avatar ayarları
+│   └── englishLearningConfig.js # İngilizce öğrenme içeriği
 │
-├── 🔧 services/                       # API servisleri
-│   ├── deepgramService.js            # Speech-to-Text servisi
-│   ├── ttsService.js                 # Text-to-Speech servisi
-│   ├── deepgramLiveService.js        # Canlı transkripsiyon
-│   ├── didApiService.js              ⭐ D-ID API servisi
-│   ├── heygenApiService.js           ⭐ HeyGen API servisi
-│   ├── avatarTTSService.js           ⭐ Avatar pipeline servisi
-│   └── offlineLipSyncService.js      ⭐ Offline lip-sync servisi
+├── 🔧 services/                 # API servisleri
+│   ├── deepgramService.js      # Speech-to-Text servisi
+│   ├── deepgramLiveService.js  # Canlı transkripsiyon
+│   ├── ttsService.js           # Text-to-Speech servisi
+│   ├── heygenApiService.js     # HeyGen Avatar API servisi
+│   ├── avatarTTSService.js     # Avatar TTS pipeline
+│   ├── videoCacheService.js    # Video cache yönetimi
+│   ├── offlineLipSyncService.js # Offline lip-sync (opsiyonel)
+│   ├── didApiService.js        # D-ID API servisi (opsiyonel)
+│   └── translationService.js   # Çeviri servisi
 │
 ├── 🎨 styles/                         # Stiller
 │   └── globalStyles.js               # Global stil tanımları
@@ -323,7 +289,9 @@ EchomindApp_v1.3/
 
 ## ⚙️ Konfigürasyon
 
-### Deepgram Ayarları (`config/deepgramConfig.js`)
+### Deepgram Konfigürasyonu
+
+`config/deepgramConfig.js` dosyasından ayarları özelleştirebilirsiniz:
 
 ```javascript
 export const DEEPGRAM_CONFIG = {
@@ -331,7 +299,7 @@ export const DEEPGRAM_CONFIG = {
   
   stt: {
     model: "nova-2",          // Model: nova-2, nova, base, enhanced
-    language: "tr",           // Dil: tr, en, es, fr, de, ja, ko...
+    detect_language: "true", // Otomatik dil algılama
     smartFormat: true,        // Otomatik formatlama
     punctuate: true,          // Noktalama işaretleri
     diarize: false,           // Konuşmacı ayırımı
@@ -339,7 +307,7 @@ export const DEEPGRAM_CONFIG = {
   },
   
   tts: {
-    model: "aura-asteria-en", // TTS ses modeli
+    model: "aura-asteria-en", // TTS ses modeli (İngilizce için)
     encoding: "linear16",     // Ses formatı
     container: "wav",         // Container format
     sampleRate: 24000,        // Örnekleme hızı
@@ -347,48 +315,49 @@ export const DEEPGRAM_CONFIG = {
 };
 ```
 
-### Avatar Ayarları (`config/avatarConfig.js`)
+### HeyGen Avatar Konfigürasyonu
+
+`config/avatarConfig.js` dosyasından avatar ayarlarını özelleştirebilirsiniz:
 
 ```javascript
 export const AVATAR_CONFIG = {
-  // API Keys
-  didApiKey: "your_did_api_key",
   heygenApiKey: "your_heygen_api_key",
-  
-  // Avatar Modu
-  mode: 'online',              // 'online' | 'offline'
-  defaultProvider: 'did',      // 'did' | 'heygen'
-  
-  // D-ID Avatarlar
   avatars: {
-    didAvatars: [
-      {
-        id: 'amy',
-        name: 'Amy',
-        gender: 'female',
-        imageUrl: 'https://create-images-results.d-id.com/DefaultPresenters/Amy/image.jpeg',
-        voiceId: 'en-US-JennyNeural',
-      },
-      // ... daha fazla avatar
-    ],
-  },
-  
-  // Video Ayarları
-  video: {
-    resolution: '512x512',     // 256x256, 512x512, 1024x1024
-    format: 'mp4',             // Video format
-    quality: 'medium',         // low, medium, high
-    fps: 25,                   // Frame rate
-  },
-  
-  // Cache Ayarları
-  cache: {
-    enabled: true,
-    maxVideos: 20,             // Max cache sayısı
-    expirationTime: 3600000,   // 1 saat (ms)
+    defaultAvatar: {
+      avatarId: "Adriana_BizTalk_Front_public",
+      name: "Adriana",
+      imageUrl: "...",
+      online: true,
+    },
   },
 };
 ```
+
+### İngilizce Öğrenme Konfigürasyonu
+
+`config/englishLearningConfig.js` dosyasında 6 seviye ve her seviyede 10 cümle tanımlıdır:
+- **A1 - Beginner**: Başlangıç seviyesi
+- **A2 - Elementary**: Temel seviye
+- **B1 - Intermediate**: Orta seviye
+- **B2 - Upper Intermediate**: Orta-ileri seviye
+- **C1 - Advanced**: İleri seviye
+- **C2 - Proficiency**: Uzman seviye
+
+### 🌍 Desteklenen Diller
+
+Deepgram otomatik dil algılama ile 30+ dili destekler:
+- 🇹🇷 Türkçe (`tr`)
+- 🇺🇸 İngilizce (`en`, `en-US`, `en-GB`, `en-AU`)
+- 🇪🇸 İspanyolca (`es`, `es-419`)
+- 🇫🇷 Fransızca (`fr`)
+- 🇩🇪 Almanca (`de`)
+- 🇯🇵 Japonca (`ja`)
+- 🇰🇷 Korece (`ko`)
+- Ve daha fazlası...
+
+Tam liste: [Deepgram Language Support](https://developers.deepgram.com/docs/languages)
+
+**Not**: Türkçe TTS için Expo Speech kullanılır, İngilizce TTS için Deepgram Aura modeli kullanılır.
 
 ---
 
@@ -439,56 +408,69 @@ Deepgram 30+ dili destekler:
 
 ## 🛠️ Teknoloji Stack
 
-| Kategori | Teknoloji | Versiyon |
-|----------|-----------|----------|
-| **Framework** | React Native | 0.81.4 |
-| **Platform** | Expo | ~54.0 |
-| **UI Library** | React | 19.1.0 |
-| **Navigasyon** | React Navigation | 7.x |
-| **Animasyon** | React Native Reanimated | 4.x |
-| **Ses/Video** | Expo AV | 16.x |
-| **Dosya Sistemi** | Expo FileSystem | 19.x |
-| **AI - STT/TTS** | Deepgram AI (Nova-2, Aura) | REST API |
-| **AI - Avatar (D-ID)** | D-ID API | REST API |
-| **AI - Avatar (HeyGen)** | HeyGen API | REST API |
+| Kategori | Teknoloji |
+|----------|-----------|
+| **Framework** | React Native 0.81.4 |
+| **Platform** | Expo ~54.0 |
+| **UI Library** | React 19.1.0 |
+| **Navigasyon** | React Navigation 7.x |
+| **Animasyon** | React Native Reanimated 4.x |
+| **Ses İşleme** | Expo AV 16.x, Expo Speech 14.x |
+| **AI/ML** | Deepgram AI (Nova-2, Aura), HeyGen Avatar |
+| **API** | Deepgram REST API, HeyGen REST API |
+| **Depolama** | Expo FileSystem (Kalıcı cache) |
+| **Safe Area** | react-native-safe-area-context |
 
 ---
 
 ## 🔥 API Kullanım Örnekleri
 
-### Speech-to-Text
+### Speech-to-Text (Otomatik Dil Algılama)
 
 ```javascript
 import { transcribeAudio } from './services/deepgramService';
 
-// Ses dosyasını transkribe et
+// Ses dosyasını transkribe et (otomatik dil algılama)
 const result = await transcribeAudio(audioFileUri);
-console.log(result); // "Merhaba, nasılsınız?"
+console.log(result); // "Merhaba, nasılsınız?" veya "Hello, how are you?"
 ```
 
-### Text-to-Speech
+### Text-to-Speech (Çoklu Dil)
 
 ```javascript
 import { speakText, textToAudioFile } from './services/ttsService';
 
-// Metni seslendir (direkt oynat)
+// Metni seslendir (otomatik dil algılama)
+// Türkçe: Expo Speech kullanır
+// İngilizce: Deepgram Aura kullanır
 await speakText("Merhaba, bu bir test mesajıdır.");
-
-// Metni ses dosyasına çevir
-const audioUri = await textToAudioFile("Kaydetmek için");
+await speakText("Hello, this is a test message.");
 ```
 
-### Text-to-Avatar (D-ID)
+### Avatar Video Oluşturma
 
 ```javascript
 import { textToAvatar } from './services/avatarTTSService';
 
-const result = await textToAvatar(
-  "Merhaba, ben bir AI avatarım",
-  "https://example.com/avatar.jpg"
-);
-
+// Avatar ile metin okutma (cache destekli)
+const result = await textToAvatar("Hello, my name is John.", "avatarId");
 console.log(result.videoUrl); // Video URL'i
+console.log(result.cached); // true/false (cache'den geldi mi?)
+```
+
+### Video Cache Yönetimi
+
+```javascript
+import { getVideoFromCache, saveVideoToCache, clearVideoCache } from './services/videoCacheService';
+
+// Cache'den video al
+const cachedVideo = await getVideoFromCache("text", "avatarId");
+
+// Video cache'e kaydet
+await saveVideoToCache("text", "avatarId", videoUrl, videoId);
+
+// Tüm cache'i temizle
+await clearVideoCache();
 ```
 
 ### Speech-to-Avatar (Tam Pipeline)
@@ -686,11 +668,14 @@ npm install
 - 📄 [Setup Guide](./SETUP.md) - Kurulum detayları
 - 📄 [Changes Log](./CHANGES.md) - Değişiklikler
 
-### Topluluk ve Destek
-
-- 💬 [GitHub Discussions](https://github.com/19e9/Echomind_App/discussions)
-- 🐛 [GitHub Issues](https://github.com/19e9/Echomind_App/issues)
-- 📧 Email: Khaledtg17@gmail.com
+- 📝 **Toplantı Notları**: Toplantıları kaydedin ve otomatik transkript alın
+- 🎓 **İngilizce Öğrenme**: 6 seviyeli sistematik öğrenme, avatar ile telaffuz pratiği
+- 🎤 **Telaffuz Analizi**: Kelime bazlı doğru/yanlış analizi, skor takibi
+- 🤖 **Avatar İletişim**: HeyGen avatar ile interaktif öğrenme deneyimi
+- ♿ **Erişilebilirlik**: İşitme engelliler için ses-metin dönüşümü
+- 🌐 **Dil Öğrenme**: Otomatik dil algılama ile çoklu dil desteği
+- 📚 **Sesli Kitap**: Metinleri sesli dinleme (Türkçe ve İngilizce)
+- 💾 **Offline Cache**: Oluşturulan videolar kalıcı olarak cache'lenir
 
 ---
 
@@ -814,38 +799,29 @@ Bu projeye katkıda bulunan herkese teşekkürler! 🙏
 
 ## 🌟 Teşekkürler
 
-Bu proje aşağıdaki harika platformlar ve topluluklar sayesinde mümkün oldu:
+- [Deepgram](https://deepgram.com/) – STT/TTS AI servisleri
+- [HeyGen](https://www.heygen.com/) – Avatar video teknolojisi
+- [Expo](https://expo.dev/) – Geliştirme platformu
+- [React Native Community](https://reactnative.dev/) – Ekosistem ve kılavuzlar
 
-- [**Deepgram**](https://deepgram.com/) - Güçlü AI STT/TTS servisleri
-- [**D-ID**](https://www.d-id.com/) - Konuşan avatar teknolojisi
-- [**HeyGen**](https://www.heygen.com/) - Profesyonel avatar videoları
-- [**Expo**](https://expo.dev/) - Harika React Native platformu
-- [**React Native Community**](https://reactnative.dev/) - Sürekli gelişen ekosistem
+## 📝 Versiyon Notları
 
----
+### v1.4.1 (Güncel)
+- İyileştirmeler ve düzeltmeler: video cache stabilitesi, HeyGen polling optimizasyonu, telaffuz analizi sunumu
+- Yeni: `translationService`, `englishLearningConfig` güncellemeleri, `EnglishLearningScreen` geliştirmeleri
+- Değişiklik: `SettingsScreen` kaldırıldı, akış basitleştirildi
 
-## 🚀 Yol Haritası
-
-### Yakın Gelecek (v1.4)
-- [ ] 🎨 Custom avatar upload (kendi fotoğrafınızı yükleyin)
-- [ ] 📹 Video indirme ve paylaşma
-- [ ] 📜 Video geçmişi (son 10 video)
-- [ ] 🌍 Türkçe TTS avatar desteği
-- [ ] 🎭 Daha fazla emotion seçeneği
-
-### Orta Vadeli (v1.5-2.0)
-- [ ] ⚡ Real-time WebRTC streaming (canlı avatar konuşması)
-- [ ] 🎬 Çoklu avatar konuşmaları (diyalog)
-- [ ] 🎨 Avatar arka plan seçimi
-- [ ] 🤖 Emotion AI (mutlu/üzgün otomatik algılama)
-- [ ] 📱 Tablet optimizasyonu
-
-### Uzun Vadeli (v2.0+)
-- [ ] 🕶️ 3D avatar desteği
-- [ ] 🥽 AR entegrasyonu
-- [ ] 🎮 Avatar gesture kontrolü
-- [ ] 🧠 GPT entegrasyonu (konuşma AI)
-- [ ] 🌐 Web uygulama versiyonu
+### v1.3.0
+- ✅ HeyGen Avatar entegrasyonu
+- ✅ İngilizce Öğrenme modülü (6 seviye, 60 cümle)
+- ✅ Video cache sistemi (kalıcı depolama)
+- ✅ Otomatik dil algılama (Deepgram)
+- ✅ Türkçe TTS desteği (Expo Speech)
+- ✅ Avatar video arka plan loop (sessiz)
+- ✅ Kelime bazlı telaffuz analizi
+- ✅ Skor takibi ve değerlendirme
+- ✅ Safe Area desteği (notch uyumlu)
+- ✅ Polling optimizasyonları (120 deneme, 4 dakika max)
 
 ---
 

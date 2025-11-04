@@ -3,6 +3,7 @@ import * as FileSystem from 'expo-file-system/legacy';
 
 /**
  * Ses dosyasını Deepgram REST API ile transkribe eder
+ * Otomatik dil algılama ile çalışır (Türkçe ve İngilizce desteklenir)
  * @param {string} audioUri - Ses dosyasının URI'si
  * @returns {Promise<string>} - Transkribe edilmiş metin
  */
@@ -26,10 +27,10 @@ export const transcribeAudio = async (audioUri) => {
     }
     console.log("✅ [4/6] Binary boyutu:", bytes.length, "bytes");
 
-    // API parametreleri
+    // API parametreleri - Otomatik dil algılama aktif (Türkçe ve İngilizce desteklenir)
     const params = new URLSearchParams({
       model: DEEPGRAM_CONFIG.stt.model,
-      language: DEEPGRAM_CONFIG.stt.language,
+      detect_language: 'true', // Otomatik dil algılama aktif
       smart_format: DEEPGRAM_CONFIG.stt.smartFormat.toString(),
       punctuate: DEEPGRAM_CONFIG.stt.punctuate.toString(),
       diarize: DEEPGRAM_CONFIG.stt.diarize.toString(),
@@ -91,7 +92,7 @@ export const transcribeAudioFromUrl = async (audioUrl) => {
   try {
     const params = new URLSearchParams({
       model: DEEPGRAM_CONFIG.stt.model,
-      language: DEEPGRAM_CONFIG.stt.language,
+      detect_language: 'true', // Otomatik dil algılama aktif
       smart_format: DEEPGRAM_CONFIG.stt.smartFormat.toString(),
       punctuate: DEEPGRAM_CONFIG.stt.punctuate.toString(),
     });

@@ -1,9 +1,47 @@
 import { Audio } from "expo-av";
+import * as Speech from 'expo-speech';
 import DEEPGRAM_CONFIG from "../config/deepgramConfig";
 import * as FileSystem from 'expo-file-system/legacy';
 
 /**
+ * Metnin dilini algılar (Türkçe veya İngilizce)
+ * @param {string} text - Algılanacak metin
+ * @returns {string} - 'tr' veya 'en'
+ */
+const detectLanguage = (text) => {
+  // Türkçe karakterleri kontrol et
+  const turkishChars = /[çğıöşüÇĞIİÖŞÜ]/;
+  // Türkçe kelimeler veya karakterler varsa Türkçe
+  if (turkishChars.test(text)) {
+    return 'tr';
+  }
+  
+  // İngilizce karakter kontrolü (basit)
+  const englishWords = /\b(the|is|are|and|or|but|to|of|a|an|in|on|at|for|with|this|that|you|we|they|he|she|it|have|has|do|does|will|would|can|could|should|may|might)\b/i;
+  if (englishWords.test(text)) {
+    return 'en';
+  }
+  
+  // Varsayılan olarak Türkçe (çoğunlukla Türkçe konuşuyorsak)
+  return 'tr';
+};
+
+/**
+ * Dil için uygun TTS modelini seçer
+ * @param {string} language - 'tr' veya 'en'
+ * @returns {string} - Model adı
+ */
+const getTTSModel = (language) => {
+  if (language === 'tr') {
+    // Deepgram'da Türkçe TTS yok, Expo Speech kullanılacak
+    return null; // Expo Speech kullan
+  }
+  return DEEPGRAM_CONFIG.tts.model; // İngilizce için Deepgram model
+};
+
+/**
  * Metni Deepgram TTS REST API ile sese çevirir ve çalar
+ * Otomatik dil algılama ile çalışır (Türkçe ve İngilizce)
  * @param {string} text - Seslendirilecek metin
  * @returns {Promise<void>}
  */
@@ -16,9 +54,34 @@ export const speakText = async (text) => {
 
     console.log("Speaking:", text);
 
-    // Deepgram TTS REST API çağrısı
+    // Metnin dilini algıla
+    const detectedLanguage = detectLanguage(text);
+    const ttsModel = getTTSModel(detectedLanguage);
+    
+    console.log(`Detected language: ${detectedLanguage}, Using model: ${ttsModel || 'Expo Speech'}`);
+
+    // Türkçe ise Expo Speech kullan (yerleşik TTS desteği)
+    if (detectedLanguage === 'tr' && !ttsModel) {
+      return new Promise((resolve, reject) => {
+        Speech.speak(text, {
+          language: 'tr-TR', // Türkçe
+          pitch: 1.0,
+          rate: 1.0,
+          onDone: () => {
+            console.log('Türkçe seslendirme tamamlandı');
+            resolve();
+          },
+          onError: (error) => {
+            console.error('TTS error:', error);
+            reject(error);
+          },
+        });
+      });
+    }
+
+    // İngilizce için Deepgram TTS REST API çağrısı
     const response = await fetch(
-      'https://api.deepgram.com/v1/speak?model=' + DEEPGRAM_CONFIG.tts.model,
+      `https://api.deepgram.com/v1/speak?model=${ttsModel}`,
       {
         method: 'POST',
         headers: {
@@ -83,8 +146,22 @@ export const speakText = async (text) => {
  */
 export const textToAudioFile = async (text) => {
   try {
+    // Metnin dilini algıla
+    const detectedLanguage = detectLanguage(text);
+    const ttsModel = getTTSModel(detectedLanguage);
+    
+    // Türkçe için Expo Speech kullanılır ama dosya olarak kaydetmek için Deepgram alternatifi yok
+    // Bu durumda Türkçe için de Deepgram'ı deniyoruz (telaffuz kötü olabilir)
+    // Veya kullanıcıya bilgi verilebilir
+    
+    if (detectedLanguage === 'tr' && !ttsModel) {
+      // Türkçe için şimdilik Deepgram'ı deniyoruz
+      // Gelecekte alternatif bir TTS servisi eklenebilir
+      console.warn('Türkçe TTS için Deepgram kullanılıyor (sınırlı destek)');
+    }
+
     const response = await fetch(
-      'https://api.deepgram.com/v1/speak?model=' + DEEPGRAM_CONFIG.tts.model,
+      `https://api.deepgram.com/v1/speak?model=${ttsModel || DEEPGRAM_CONFIG.tts.model}`,
       {
         method: 'POST',
         headers: {
